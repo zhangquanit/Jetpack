@@ -14,6 +14,7 @@ class MainActivity : AppCompatActivity() {
 
         liveData.observe(this, Observer {
             println("11 收到通知: ${it.str}")
+            Thread.dumpStack()
         })
 
         btn_send.setOnClickListener {

@@ -1,4 +1,6 @@
 
+https://developer.android.google.cn/topic/libraries/architecture/livedata
+
 LiveData是和LifecycleOwner生命周期绑定的事件通知。
 
 

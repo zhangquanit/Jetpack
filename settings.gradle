@@ -1,3 +1,7 @@
+include ':viewbinding'
+include ':workmanager'
+include ':viewmodel_source'
+include ':viewmodel'
 include ':livedata'
 include ':app'
 rootProject.name = "Jetpack"

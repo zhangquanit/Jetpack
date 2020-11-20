@@ -1,0 +1,45 @@
+
+https://developer.android.google.cn/topic/libraries/view-binding
+
+作用：取代findViewById，如果是kotlin，则没有用处
+
+1、开启
+android {
+    ...
+    buildFeatures {
+        viewBinding true
+    }
+}
+
+2、忽略生成binding文件
+对于不需要或没必要findViewBinding的layout，添加tools:viewBindingIgnore="true"
+tools:viewBindingIgnore="true"
+
+<LinearLayout
+        ...
+        tools:viewBindingIgnore="true" >
+    ...
+</LinearLayout>
+
+3、使用
+比如activity_main.xml 则自动生成ActivityMainBinding
+在activity和fragment中使用
+
+4、与 findViewById 的区别
+与使用 findViewById 相比，视图绑定具有一些很显著的优点：
+Null 安全：由于视图绑定会创建对视图的直接引用，因此不存在因视图 ID 无效而引发 Null 指针异常的风险。此外，如果视图仅出现在布局的某些配置中，则绑定类中包含其引用的字段会使用 @Nullable 标记。
+类型安全：每个绑定类中的字段均具有与它们在 XML 文件中引用的视图相匹配的类型。这意味着不存在发生类转换异常的风险。
+
+5、与data binding的对比
+android {
+    ...
+    buildFeatures {
+        dataBinding true
+    }
+}
+优点：
+更快的编译速度：视图绑定不需要处理注释，因此编译时间更短。
+易于使用：在模块中启用视图绑定后，它会自动应用于该模块的所有布局。
+缺点：
+视图绑定不支持布局变量或布局表达式，因此不能用于直接在 XML 布局文件中声明动态界面内容。
+视图绑定不支持双向数据绑定。

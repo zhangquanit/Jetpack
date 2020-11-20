@@ -1,0 +1,128 @@
+
+google官方组件demo
+https://github.com/android/architecture-components-sampleshttps://github.com/androidhttps://github.com/androidhttps://github.com/android
+
+展示了使用 Android Jetpack 进行 Android 开发的最佳做法。
+https://github.com/android/sunflower
+
+
+https://github.com/googlecodelabs
+
+
+lifecycle调用链：
+Activity/Fragment生命周期函数()
+-->ReportFragment.dispatch(Lifecycle.Event event)
+-->LifecycleRegistry.handleLifecycleEvent(event)： 遍历注册的LifecycleEventObserver，发送事件
+-->ObserverWithState.dispatchEvent(lifecycleOwner, event)： ObserverWithState是对LifecycleEventObserver的包装
+-->LifecycleEventObserver..onStateChanged(owner, event)：处理事件，比如LiveData的监听
+
+
+一、LifecycleOwner、ViewModelStoreOwner
+LifecycleOwner--new LifecycleRegistry(this)注册监听，由ReportFragment调用，根据生命周期State分发事件
+ViewModelStoreOwner--负责创建和销毁ViewModelStore
+ReportFragment-- 根据生命周期函数，负责分发事件，调用LifecycleRegistry处理事件，((LifecycleRegistry) lifecycle).handleLifecycleEvent(event);
+
+
+public class ComponentActivity extends androidx.core.app.ComponentActivity implements
+        LifecycleOwner,
+        ViewModelStoreOwner {
+
+    static final class NonConfigurationInstances {
+        Object custom;
+        ViewModelStore viewModelStore;
+    }
+
+    private final LifecycleRegistry mLifecycleRegistry = new LifecycleRegistry(this);
+    private ViewModelStore mViewModelStore;
+
+
+    public ComponentActivity() {
+        Lifecycle lifecycle = getLifecycle();
+
+        getLifecycle().addObserver(new LifecycleEventObserver() {
+            @Override
+            public void onStateChanged(@NonNull LifecycleOwner source,
+                    @NonNull Lifecycle.Event event) {
+                if (event == Lifecycle.Event.ON_DESTROY) {
+                    if (!isChangingConfigurations()) {
+                        getViewModelStore().clear(); //清理ViewModel
+                    }
+                }
+            }
+        });
+    }
+
+
+    @Override
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        //ReportFragment负责根据生命周期函数分发事件
+        ReportFragment.injectIfNeededIn(this);
+
+        if (mContentLayoutId != 0) {
+            setContentView(mContentLayoutId);
+        }
+    }
+
+    @CallSuper
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        Lifecycle lifecycle = getLifecycle();
+        if (lifecycle instanceof LifecycleRegistry) {
+            ((LifecycleRegistry) lifecycle).setCurrentState(Lifecycle.State.CREATED);
+        }
+        super.onSaveInstanceState(outState);
+        mSavedStateRegistryController.performSave(outState);
+    }
+
+
+    @Override
+    @Nullable
+    public final Object onRetainNonConfigurationInstance() {
+        Object custom = onRetainCustomNonConfigurationInstance();
+
+        ViewModelStore viewModelStore = mViewModelStore;
+        if (viewModelStore == null) {
+
+            NonConfigurationInstances nc =
+                    (NonConfigurationInstances) getLastNonConfigurationInstance();
+            if (nc != null) {
+                viewModelStore = nc.viewModelStore;
+            }
+        }
+
+        if (viewModelStore == null && custom == null) {
+            return null;
+        }
+
+        NonConfigurationInstances nci = new NonConfigurationInstances();
+        nci.custom = custom;
+        nci.viewModelStore = viewModelStore;
+        return nci;
+    }
+
+
+    @Override
+    public Lifecycle getLifecycle() {
+        return mLifecycleRegistry;
+    }
+
+    @NonNull
+    @Override
+    public ViewModelStore getViewModelStore() {
+
+        if (mViewModelStore == null) {
+            NonConfigurationInstances nc =
+                    (NonConfigurationInstances) getLastNonConfigurationInstance();
+            if (nc != null) {
+                // 恢复之前创建的ViewModelStore
+                mViewModelStore = nc.viewModelStore;
+            }
+            if (mViewModelStore == null) {
+                mViewModelStore = new ViewModelStore();
+            }
+        }
+        return mViewModelStore;
+    }
+}

@@ -1,0 +1,85 @@
+
+WorkManager用于调度任务，可取代之前的后台调度任务，比如AsyncTask、JobScheduler，并且遵循低电耗模式
+
+
+一、底层调度服务
+api>=23 使用JobScheduler
+22>=api>=14 使用AlarmManager+BrodcastReceiver
+
+二、功能
+1、工作约束
+使用工作约束明确定义工作运行的最佳条件。（例如，仅在设备采用 Wi-Fi 网络连接时、当设备处于空闲状态或者有足够的存储空间时运行。）
+2、强大的调度
+schedule work to run one- time or repeatedly。
+set tag or name
+schedule unique, replaceable work and monitor or cancel groups of work together.
+已调度的工作存储在SQLite 数据库中，由 WorkManager 负责确保该工作持续进行，并在设备重新启动后重新调度。
+此外，WorkManager 遵循低电耗模式等省电功能和最佳做法
+
+3、灵活的重试政策
+当任务执行失败了，可设置重试策略。
+
+4、任务链
+对于相对负责的任务，支持任务链式调用。
+WorkManager.getInstance(...)
+    .beginWith(Arrays.asList(workA, workB))
+    .then(workC)
+    .enqueue();
+
+5、内置线程互操作性
+WorkManager 无缝集成 RxJava 和 协程，并可灵活地插入您自己的异步 API。
+
+
+二、WorkManager适用性
+WorkManager 适用于可延期工作，即不需要立即运行但需要可靠运行的工作，即使用户退出或设备重启也不受影响。例如：
+向后端服务发送日志或分析数据
+定期将应用数据与服务器同步
+WorkManager 不适用于应用进程结束时能够安全终止的运行中后台工作，也不适用于需要立即执行的工作。
+
+三、后台任务分类
+后台任务分为以下几个主要类别：
+1、即时任务
+对于应在用户离开特定作用域或完成某项互动时结束的任务。推荐使用Kotlin协程，ViewModel+LiveData
+对于应立即执行并需要继续处理的任务，比如应用放在后台或重启设备。推荐使用WorkManager。对于耗时的任务，比如下载或上传文件，可调用setForegroundAsync
+
+2、延期任务
+凡是不直接与用户互动相关且日后可随时运行的任务，都可以延期执行。建议使用 WorkManager。
+3、精确任务
+需要在精确时间点执行的任务可以使用 AlarmManager。
+
+
+三、使用
+1、定义Worker
+public class UploadWorker extends Worker {
+   public UploadWorker(
+       @NonNull Context context,
+       @NonNull WorkerParameters params) {
+       super(context, params);
+   }
+
+   @Override
+   public Result doWork() {
+
+     uploadImages();
+
+     return Result.success();
+   }
+}
+Result.success()：工作成功完成。
+Result.failure()：工作失败。
+Result.retry()：工作失败，应根据其重试政策在其他时间尝试。
+
+2、创建WorkerRequest
+WorkRequest 对象包含 WorkManager 调度和运行工作所需的所有信息。
+该类有两个派生实现，可用于创建 OneTimeWorkRequest 和 PeriodicWorkRequest 请求。
+
+    调度一次性工作和重复性工作
+    设置工作约束条件，例如要求连接到 Wi-Fi 网络或正在充电
+    确保至少延迟一定时间再执行工作
+    设置重试和退避策略
+    将输入数据传递给工作
+    使用标记将相关工作分组在一起
+
+3、提交WrokerRequest
+使用 enqueue() 方法将 WorkRequest 提交到 WorkManager。
+执行work的确切时间取决于 WorkRequest 中使用的约束和系统优化方式。

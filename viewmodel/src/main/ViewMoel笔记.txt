@@ -1,0 +1,124 @@
+
+https://developer.android.google.cn/topic/libraries/architecture/viewmodel
+ViewModel 类旨在以注重生命周期的方式存储和管理界面相关的数据。ViewModel 类让数据可在发生屏幕旋转等配置更改后继续留存。
+
+一、生命周期
+    <activity android:name=".MainActivity">
+        <intent-filter>
+            <action android:name="android.intent.action.MAIN" />
+
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent-filter>
+    </activity>
+
+class MainActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+        //activity横竖屏切换，viewModel实例不变
+        val viewModel = ViewModelProviders.of(this).get(MyViewModel::class.java)
+    }
+}
+1、activity横竖屏切换，activity重建，viewModel实例不变，还是同一个
+不配置configchanges，Activity横竖屏切换只会调用onDestory，不会调用finish。
+        getLifecycle().addObserver(new LifecycleEventObserver() {
+            @Override
+            public void onStateChanged(LifecycleOwner source, Lifecycle.Event event) {
+                if (event == Lifecycle.Event.ON_DESTROY) { // ON_DESTROY事件
+                    if (!isChangingConfigurations()) {// 如果不是configuration发生改变的，就清理ViewModel
+                        getViewModelStore().clear();
+                    }
+                }
+            }
+        });
+
+2、一个activity中，多个fragment之间的通讯，可以使用activity绑定的ViewModel来解决(同一个实例)
+class MyFragment1 : Fragment() {
+    fun getViewModel(): MyViewModel {
+        return ViewModelProviders.of(activity!!).get(MyViewModel::class.java)
+    }
+}
+class MyFragment2 : Fragment() {
+    fun getViewModel(): MyViewModel {
+        return ViewModelProviders.of(activity!!).get(MyViewModel::class.java)
+    }
+}
+
+
+----------源码解析
+ViewModelProviders；根据Activity或Fragment创建ViewModelProvider，
+ViewModelProvider：负责创建ViewModel，主要是通过反射创建实例，然后保存到Activity/Fragment中的ViewModelStore中
+ViewModelStore：用于存放和获取ViewModel，HashMap<String, ViewModel> mMap = new HashMap<>()
+ViewModel：一般用于处理UI数据或一些逻辑调用,一般通过LiveData和UI交互
+Actvity/Fragment：实现ViewModelStoreOwner接口，负责创建和销魂ViewModelStore，
+
+
+public class ComponentActivity extends androidx.core.app.ComponentActivity implements
+        LifecycleOwner,
+        ViewModelStoreOwner {
+
+    static final class NonConfigurationInstances {
+        Object custom;
+        ViewModelStore viewModelStore;
+    }
+    private ViewModelStore mViewModelStore;
+
+    public ComponentActivity() {
+        Lifecycle lifecycle = getLifecycle();
+        getLifecycle().addObserver(new LifecycleEventObserver() {
+            @Override
+            public void onStateChanged(@NonNull LifecycleOwner source,
+                    @NonNull Lifecycle.Event event) {
+                if (event == Lifecycle.Event.ON_DESTROY) {
+                    if (!isChangingConfigurations()) {//如果不是configuration发生改变的，就清理ViewModel
+                        getViewModelStore().clear();
+                    }
+                }
+            }
+        });
+    }
+
+    public final Object onRetainNonConfigurationInstance() {
+        Object custom = onRetainCustomNonConfigurationInstance();
+
+        ViewModelStore viewModelStore = mViewModelStore;
+        if (viewModelStore == null) {
+            NonConfigurationInstances nc =
+                    (NonConfigurationInstances) getLastNonConfigurationInstance();
+            if (nc != null) {
+                viewModelStore = nc.viewModelStore;
+            }
+        }
+
+        if (viewModelStore == null && custom == null) {
+            return null;
+        }
+
+        //configuration发生变化 保存viewModelStore
+        NonConfigurationInstances nci = new NonConfigurationInstances();
+        nci.custom = custom;
+        nci.viewModelStore = viewModelStore;
+        return nci;
+    }
+
+    public ViewModelStore getViewModelStore() {
+
+        if (mViewModelStore == null) {
+            NonConfigurationInstances nc =
+                    (NonConfigurationInstances) getLastNonConfigurationInstance();
+            if (nc != null) {
+                // 恢复ViewModel 横竖屏切换重建activity，使用同一个ViewModel
+                mViewModelStore = nc.viewModelStore;
+            }
+            if (mViewModelStore == null) {
+                mViewModelStore = new ViewModelStore();
+            }
+        }
+        //多次调用ViewModelProviders.of(this).get(MyViewModel::class.java)  也只能获得同一个ViewModel实例
+        return mViewModelStore;
+    }
+}
+
+
+
+
