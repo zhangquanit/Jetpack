@@ -1,3 +1,4 @@
+include ':lifecycle'
 include ':viewbinding'
 include ':workmanager'
 include ':viewmodel_source'

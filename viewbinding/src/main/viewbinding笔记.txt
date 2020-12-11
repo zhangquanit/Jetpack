@@ -1,7 +1,7 @@
 
 https://developer.android.google.cn/topic/libraries/view-binding
 
-作用：取代findViewById，如果是kotlin，则没有用处
+作用：取代findViewById，如果是kotlin，则没有用处,支持library项目
 
 1、开启
 android {
