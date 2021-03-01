@@ -18,6 +18,7 @@ class MainActivity : AppCompatActivity() {
         //activity横竖屏切换，viewModel实例不变
         val viewModel = ViewModelProviders.of(this).get(MyViewModel::class.java)
         println("MainActivity liveData.hasObservers=${viewModel.liveData.hasObservers()}")
+        viewModel.liveData.removeObservers(this) //先注销之前添加的observer
         viewModel.liveData.observe(this, Observer<String> {
             println("MainActivity observe data=$it")
         })
