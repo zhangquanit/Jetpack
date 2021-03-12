@@ -7,6 +7,8 @@ import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleEventObserver;
 import androidx.lifecycle.LifecycleOwner;
 
+import android.app.backup.FullBackupDataOutput;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.View;
@@ -46,10 +48,18 @@ public class MainActivity extends AppCompatActivity {
         });
 
         backPressedDispatchTest();
+
+        findViewById(R.id.btn_myservice).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this, LifecycleServiceTest.class));
+            }
+        });
     }
 
 
     //--------------------------------------------------------
+
     /**
      * 返回按键处理
      * <pre>
@@ -61,10 +71,11 @@ public class MainActivity extends AppCompatActivity {
      */
     private void backPressedDispatchTest() {
         //注册返回事件处理，onDestory自动注销. 拿到Activity对象就可以注册返回事件，避免重写Activity的onBackPressed或onKeyDown。
-        getOnBackPressedDispatcher().addCallback(this,new OnBackPressedCallback(true) {
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
                 System.out.println("OnBackPressedCallback handleOnBackPressed");
+                finish();
             }
         });
     }
@@ -82,4 +93,6 @@ public class MainActivity extends AppCompatActivity {
         }
         return super.onKeyDown(keyCode, event);
     }
+
+
 }

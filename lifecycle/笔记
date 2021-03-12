@@ -1,0 +1,27 @@
+
+https://www.jianshu.com/p/3e744c70531f
+
+Jetpack 为我们提供了两个接口：
+被观察者：LifecycleOwner
+观察者：LifecycleObserver
+被监听的系统组件需要去实现 LifecycleOwner 接口，观察者需要实现 LifecycleObserver 接口。
+
+二、使用场景
+使用 LifeCycle 解耦页面(Activity/Fragment)与组件
+使用 LifecycleService 解耦 Service 与组件
+使用 ProcessLifecycleOwner 监听应用程序的生命周期
+
+
+三、LifeCycle 的两种写法
+
+1、LifecycleObserver 配合 @OnLifecycleEvent 注解
+getLifecycle().addObserver(new MyLifecycleObserver());
+
+2、LifecycleEventObserver 将宿主生命周期事件封装成 Lifecycle.Event
+getLifecycle().addObserver(new LifecycleEventObserver() {
+    @Override
+    public void onStateChanged(@NonNull LifecycleOwner source,
+                               @NonNull Lifecycle.Event event) {
+        System.out.println("[LifecycleEventObserver]  event=" + event);
+    }
+});
