@@ -48,6 +48,7 @@ class MyFragment2 : Fragment() {
 ----------源码解析
 ViewModelProviders；根据Activity或Fragment创建ViewModelProvider，
 ViewModelProvider：负责创建ViewModel，主要是通过反射创建实例，然后保存到Activity/Fragment中的ViewModelStore中
+ViewModelOwner：一般生命周期组件(Activity/Fragment)会实现该接口，表示持有ViewModelStore
 ViewModelStore：用于存放和获取ViewModel，HashMap<String, ViewModel> mMap = new HashMap<>()
 ViewModel：一般用于处理UI数据或一些逻辑调用,一般通过LiveData和UI交互
 Actvity/Fragment：实现ViewModelStoreOwner接口，负责创建和销魂ViewModelStore，
@@ -119,6 +120,67 @@ public class ComponentActivity extends androidx.core.app.ComponentActivity imple
     }
 }
 
+-------------
+public interface ViewModelStoreOwner {
+    ViewModelStore getViewModelStore();
+}
 
+public class ViewModelStore {
+    private final HashMap<String, ViewModel> mMap = new HashMap<>();
+    final void put(String key, ViewModel viewModel) {
+        ViewModel oldViewModel = mMap.put(key, viewModel);
+        if (oldViewModel != null) {
+            oldViewModel.onCleared(); //
+        }
+    }
 
+    final ViewModel get(String key) {
+        return mMap.get(key);
+    }
+}
 
+public class ComponentActivity implements ViewModelStoreOwner{
+    public ViewModelStore getViewModelStore() {
+
+         return mViewModelStore;
+    }
+}
+
+//负责创建ViewModelProvider
+public class ViewModelProviders {
+
+    public static ViewModelProvider of(@NonNull FragmentActivity activity) {
+        return of(activity, null);
+    }
+
+    public static ViewModelProvider of(@NonNull FragmentActivity activity,
+            @Nullable ViewModelProvider.Factory factory) {
+        Application application = checkApplication(activity);
+        if (factory == null) {
+            factory = ViewModelProvider.AndroidViewModelFactory.getInstance(application);
+        }
+        return new ViewModelProvider(activity.getViewModelStore(), factory);
+    }
+}
+
+public class ViewModelProvider {
+    private final ViewModelStore mViewModelStore;
+    public ViewModelProvider(@NonNull ViewModelStore store, @NonNull Factory factory) {
+        mFactory = factory;
+        mViewModelStore = store;
+    }
+
+    public <T extends ViewModel> T get(String key,Class<T> modelClass) {
+
+        ViewModel viewModel = mViewModelStore.get(key); //从ViewModelStore中找到对应的ViewModel
+
+        if (modelClass.isInstance(viewModel)) {
+            return (T) viewModel;
+        }
+
+        //反射创建对象  保存到mViewModelStore中
+        viewModel = (mFactory).create(modelClass);
+        mViewModelStore.put(key, viewModel);
+        return (T) viewModel;
+    }
+}

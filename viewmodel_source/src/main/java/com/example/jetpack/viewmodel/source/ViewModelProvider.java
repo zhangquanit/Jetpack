@@ -119,6 +119,7 @@ public class ViewModelProvider {
         @NonNull
         @Override
         public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
+            //反射创建AndroidViewModel
             if (AndroidViewModel.class.isAssignableFrom(modelClass)) {
                 try {
                     return modelClass.getConstructor(Application.class).newInstance(mApplication);
