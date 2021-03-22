@@ -6,7 +6,18 @@ Jetpack 为我们提供了两个接口：
 观察者：LifecycleObserver
 
 被监听的系统组件需要去实现 LifecycleOwner接口（比如Activity、Fragment、Service），观察者需要实现 LifecycleObserver 接口。
-LifecycleOwner.getLifecycle()其实返回的是LifecycleRegistry对象。
+
+public interface LifecycleOwner {
+    Lifecycle getLifecycle();
+}
+
+public class ComponentActivity implements LifecycleOwner{
+   private final LifecycleRegistry mLifecycleRegistry = new LifecycleRegistry(this);
+    public Lifecycle getLifecycle() {
+        return mLifecycleRegistry; //其实返回的是LifecycleRegistry对象。
+    }
+}
+
 public class LifecycleRegistry extends Lifecycle {
 
     public LifecycleRegistry(@NonNull LifecycleOwner provider) {
@@ -27,6 +38,8 @@ public class LifecycleRegistry extends Lifecycle {
 
     }
 }
+
+
 
 二、使用场景
 使用 LifeCycle 解耦页面(Activity/Fragment)与组件
