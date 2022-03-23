@@ -8,10 +8,9 @@ LiveData是和LifecycleOwner生命周期绑定的事件通知。
     var liveData= MutableLiveData<DataEntity>()
     //设置监听
     liveData.observe(this,object:Observer<DataEntity>{
-        override fun onChanged(t: DataEntity?) {
+        fun onChanged(t: DataEntity?) {
 
-        }
-
+         }
     })
 
     //setValue  触发通知
@@ -20,14 +19,38 @@ LiveData是和LifecycleOwner生命周期绑定的事件通知。
 
 基于androidx分析：
 1、设置监听
-    //liveData保存
-    LifecycleBoundObserver wrapper = new LifecycleBoundObserver(owner, observer);
-    ObserverWrapper existing = mObservers.putIfAbsent(observer, wrapper);
-    //注册到lifecycle，当lifecycle生命周期发生改变，回调LifecycleBoundObserver
-    owner.getLifecycle().addObserver(wrapper);
-2、setValue 触发通知
-observer.mObserver.onChanged((T) mData);
+LiveData<> liveData = new MutableLiveData()
+LiveData.observe(LifecycleOwner owner, Observer<? super T> observer) {
 
+    LifecycleBoundObserver wrapper = new LifecycleBoundObserver(owner, observer);
+        //注册到lifecycle，当lifecycle生命周期发生改变，回调LifecycleBoundObserver
+    owner.getLifecycle().addObserver(wrapper);
+
+2、setValue()触发通知，回调Observer.onChanged()
+    mObserver.onChanged((T) mData)
+
+3、自动注销
+ReportFragment.onDestory()
+       -->LifecycleBoundObserver.onStateChanged(owner, event)
+
+  class LifecycleBoundObserver extends ObserverWrapper implements GenericLifecycleObserver {
+        final LifecycleOwner mOwner;
+
+        LifecycleBoundObserver(@NonNull LifecycleOwner owner, Observer<? super T> observer) {
+            super(observer);
+            mOwner = owner;
+        }
+
+        @Override
+        public void onStateChanged(LifecycleOwner source, Lifecycle.Event event) {
+            if (mOwner.getLifecycle().getCurrentState() == DESTROYED) { //ReportFragment.onDestory分发执行
+                removeObserver(mObserver);
+                return;
+            }
+            activeStateChanged(shouldBeActive());
+        }
+
+  }
 
 1、Activity继承关系
 public class ComponentActivity extends Activity implements LifecycleOwner

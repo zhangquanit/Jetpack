@@ -11,6 +11,7 @@ https://github.com/googlecodelabs
 
 lifecycle调用链：
 Activity/Fragment生命周期函数()
+ onCreate()-ReportFragment.injectIfNeededIn(this); //添加ReportFragment
 -->ReportFragment.dispatch(Lifecycle.Event event)
 -->LifecycleRegistry.handleLifecycleEvent(event)： 遍历注册的LifecycleEventObserver，发送事件
 -->ObserverWithState.dispatchEvent(lifecycleOwner, event)： ObserverWithState是对LifecycleEventObserver的包装
