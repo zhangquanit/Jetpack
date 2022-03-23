@@ -66,6 +66,7 @@ public class ComponentActivity extends androidx.core.app.ComponentActivity imple
 
     public ComponentActivity() {
         Lifecycle lifecycle = getLifecycle();
+        //监听onDestory  调用ViewModel.clear()
         getLifecycle().addObserver(new LifecycleEventObserver() {
             @Override
             public void onStateChanged(@NonNull LifecycleOwner source,
